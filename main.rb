@@ -10,14 +10,14 @@ class Player
 
   def initialize(name, maker)
     @name = name
-    @maker = maker #value here is true
+    @maker = maker # value here is true
     @pl_score = 0
 
     @@player_no += 1
   end
 
   def player_type
-    @maker ? "is the code maker" : "is the code breaker"
+    @maker ? 'is the code maker' : 'is the code breaker'
   end
 
   def add_score
@@ -26,24 +26,29 @@ class Player
 end
 
 # Random method to get player info
-def player_info
-  $p_info = []
+def player_info (v = '')
+  $p_info = [] # would have used class var, but unavaliable for some reason
   res = ''
   print "player#{Player.class_eval '@@player_no'}, Enter your name-> "
   $p_info[0] = gets.chomp
-  until res == 'y' || res == 'n'
-    print 'Do you want to be the code maker? (y,n) > '
-    res = gets.chomp.downcase
+  
+  # ask the below if h v h
+  if v == 'human vs human'
+    until res == 'y' || res == 'n'
+      print 'Do you want to be the code maker? (y,n) > '
+      res = gets.chomp.downcase
+    end
+    $p_info[1] = res
   end
-  $p_info[1] = res
 end
 
 # Game: handles game logic, rounds and game variables
 class Game
-  attr_accessor :slots
+  attr_accessor :slots, :vs_computer
 
-  def initialize (pl1, pl2)
+  def initialize(pl1, pl2)
     @slots = 0
+    @vs_computer
     # @pl1 = pl1
     # @pl2 = pl2
     if pl1.maker
@@ -53,7 +58,7 @@ class Game
       @maker = pl2
       @breaker = pl1
     end
-    @m_guess = []
+    @m_guess = [] # code makers' guess
     @result = []
     @guessed = false
     @keep_play = true
@@ -73,7 +78,7 @@ class Game
     while @keep_play
       self.play_round
       chk = ''
-      until chk == 'y' || chk == 'n'
+      until %w[y n].include?(chk)
         puts 'Keep playing? (y,n) -> '
         chk = gets.chomp.downcase
       end
@@ -93,16 +98,22 @@ class Game
   def play_round
     @m_guess = [] # resets master guess at the start of each round
     @guessed = false
-    if @maker.maker 
+    if @maker.maker && !@vs_computer
       puts "Choose from these colors: #{COLORS.join(', ').upcase}"
       @slots.times { |i| self.make_guess(i + 1) }
+      self.guess
+
+    elsif @maker.maker && @vs_computer
+      puts "The computer is making a guess.."
+      sleep(3)
+      @slots.times { @m_guess.push(COLORS[rand(0..4)]) }
       self.guess
     end
   end
 
   def guess
     guesses = 1
-    until @guessed || guesses > 6
+    until @guessed || guesses > 10
       system('clear') || system('cls')
       p @result
       puts "Codes broken by #{@breaker.name}: #{@breaker.pl_score}"
@@ -125,8 +136,10 @@ class Game
     if @guessed
       puts 'you guessed right!!'
       @breaker.add_score
+      @result = []
     else
       puts 'you ran out of guesses :('
+      @results = []
     end
   end
 
@@ -159,13 +172,33 @@ class Game
 end
 
 puts 'Welcome to terminal Mastermind'
-$p_info = []
-player_info
-player1 = Player.new($p_info[0], $p_info[1] == 'y')
-# player two
-player_info
-player2 = Player.new($p_info[0], !player1.maker)
+$p_info = [] # redudant
+type_of_game = ''
+puts "1. Player vs Player\n2. Computer maker vs Player\n3. player vs computer guesser "
+until [1,2,3].include?(type_of_game)
+  print '->'
+  type_of_game = gets.chomp.to_i
+end
 
-master_game = Game.new(player1, player2)
-master_game.set_slots
-master_game.play
+if type_of_game == 1
+  # player vs player
+  v = 'human vs human'
+  player_info(v)
+  player1 = Player.new($p_info[0], $p_info[1] == 'y')
+  player_info
+  player2 = Player.new($p_info[0], !player1.maker)
+  master_game = Game.new(player1, player2)
+  master_game.set_slots
+  master_game.play
+elsif type_of_game == 2
+  # computer vs player
+  player_info
+  player1 = Player.new($p_info[0], false)
+  comp = Player.new('Ultron_at_home', true)
+  comp_game = Game.new(comp, player1)
+  comp_game.slots = 4
+  comp_game.vs_computer = true
+  comp_game.play
+else
+  # comp guesser vs player
+end
