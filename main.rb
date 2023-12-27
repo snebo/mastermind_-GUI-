@@ -54,6 +54,7 @@ class Game
       @breaker = pl1
     end
     @m_guess = []
+    @result = []
     @guessed = false
     @keep_play = true
   end
@@ -62,7 +63,7 @@ class Game
     puts '=' * 30
     slots = 0
     until Array(3..9).include?(slots)
-      print 'Enter no of slots -> '
+      print 'Enter no of slots ->'
       slots = gets.chomp.to_i
     end
     @slots = slots
@@ -76,14 +77,14 @@ class Game
         puts 'Keep playing? (y,n) -> '
         chk = gets.chomp.downcase
       end
-      chk == 'y' ? @keep_play = fasle : nil
+      chk == 'n' ? @keep_play =false : nil
     end
   end
 
   def make_guess(count)
     val = ''
     until COLORS.include?(val)
-      print "\nEnter a valid color in slot #{count} -> "
+      print "\n#{@maker.name} Enter a valid color in slot #{count} -> "
       val = gets.chomp.downcase
     end
     @m_guess.push(val)
@@ -91,11 +92,10 @@ class Game
 
   def play_round
     @m_guess = [] # resets master guess at the start of each round
-
+    @guessed = false
     if @maker.maker 
       puts "Choose from these colors: #{COLORS.join(', ').upcase}"
       @slots.times { |i| self.make_guess(i + 1) }
-      # puts "Makers guess: #{@m_guess.inspect}"
       self.guess
     end
   end
@@ -103,15 +103,16 @@ class Game
   def guess
     guesses = 1
     until @guessed || guesses > 6
-      system(clear) || system(cls)
-      puts "Codes broken by #{breaker.name}: #{breaker.pl_score}"
+      system('clear') || system('cls')
+      p @result
+      puts "Codes broken by #{@breaker.name}: #{@breaker.pl_score}"
       puts '=' * 30
       my_guess = []
       # making sure a valid color is guessed
       @slots.times do
         val = ''
         until COLORS.include?(val)
-          print 'Guess a valid color -> '
+          print "#{@breaker.name} Guess a valid color -> "
           val = gets.chomp.downcase
         end
         my_guess.push(val)
@@ -130,7 +131,7 @@ class Game
   end
 
   def check_guess(my_g)
-    result = []
+    @result = []
     dummy_guess = @m_guess.clone
     puts "checking #{my_g} vs #{@m_guess}"
     # first check the guess
@@ -141,7 +142,7 @@ class Game
     # check matches
     @slots.times do |i|
       if my_g[i] == @m_guess[i]
-        result.push('black')
+        @result.push('black')
         dummy_guess[i] = nil
       end
     end
@@ -150,10 +151,10 @@ class Game
       if dummy_guess.include?(my_g[i])
         idx = dummy_guess.find_index(my_g[i])
         dummy_guess[idx] = nil
-        result.push('white')
+        @result.push('white')
       end
     end
-    puts "result: #{result.join(', ')}"
+    puts "result: #{@result.join(', ')}"
   end
 end
 
