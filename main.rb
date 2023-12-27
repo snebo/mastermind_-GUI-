@@ -70,9 +70,9 @@ class Game
   end
 
   def play
-    chk = ''
     while @keep_play
       self.play_round
+      chk = ''
       until chk == 'y' || chk == 'n'
         puts 'Keep playing? (y,n) -> '
         chk = gets.chomp.downcase
