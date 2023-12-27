@@ -25,7 +25,7 @@ class Player
   end
 end
 
-# Random method to get player info
+# Random method to get pre player informations
 def player_info (v = '')
   $p_info = [] # would have used class var, but unavaliable for some reason
   res = ''
@@ -44,11 +44,12 @@ end
 
 # Game: handles game logic, rounds and game variables
 class Game
-  attr_accessor :slots, :vs_computer
+  attr_accessor :slots, :vs_computer, :pl_guesser
 
   def initialize(pl1, pl2)
     @slots = 0
-    @vs_computer
+    @vs_computer = false
+    @pl_guesser = true
     # @pl1 = pl1
     # @pl2 = pl2
     if pl1.maker
@@ -82,7 +83,7 @@ class Game
         puts 'Keep playing? (y,n) -> '
         chk = gets.chomp.downcase
       end
-      chk == 'n' ? @keep_play =false : nil
+      chk == 'n' ? @keep_play = false : nil
     end
   end
 
@@ -98,7 +99,7 @@ class Game
   def play_round
     @m_guess = [] # resets master guess at the start of each round
     @guessed = false
-    if @maker.maker && !@vs_computer
+    if @maker.maker && !@vs_computer 
       puts "Choose from these colors: #{COLORS.join(', ').upcase}"
       @slots.times { |i| self.make_guess(i + 1) }
       self.guess
@@ -113,34 +114,77 @@ class Game
 
   def guess
     guesses = 1
+    copy = COLORS.copy
     until @guessed || guesses > 10
-      system('clear') || system('cls')
-      p @result
-      puts "Codes broken by #{@breaker.name}: #{@breaker.pl_score}"
-      puts '=' * 30
-      my_guess = []
-      # making sure a valid color is guessed
-      @slots.times do
-        val = ''
-        until COLORS.include?(val)
-          print "#{@breaker.name} Guess a valid color -> "
-          val = gets.chomp.downcase
+      if @pl_guesser
+        system('clear') || system('cls')
+        p @result
+        puts "Codes broken by #{@breaker.name}: #{@breaker.pl_score}"
+        puts '=' * 30
+        my_guess = [] # redudant
+        # making sure a valid color is guessed
+        @slots.times do
+          val = ''
+          until COLORS.include?(val)
+            print "#{@breaker.name} Guess a valid color -> "
+            val = gets.chomp.downcase
+          end
+          my_guess.push(val)
         end
-        my_guess.push(val)
+
+      else
+        # system logic starts here
+        # system('clear') || system('cls')
+        
+        #don't over think it
+        id = 0
+        bg_color = COLORS.clone
+        fr_arr = Array.new(4,nil)
+
+        if @result.empty?
+          @slots.times = {my_guess.push(bg_color[i])}
+          id += 1
+        else
+          if @result.length < 4
+            if @result.include?('black')
+              black = @result.count('black')
+              black.times {fr_arr.push(my_guess)}
+            end
+            if @result.include?('white')
+              white = @result.count('white')
+              white.times {fr_arr.push(my_guess)}
+            end
+            # make a new array wit fr and new index
+            my_guess = (fr_arr+Array.new(4)).fill((bg_color[i+i]), (black+white))
+            id += 1
+          
+          else
+          end
+          
+        end
       end
-      # check the guess
       check_guess(my_guess)
       guesses += 1
     end
 
+    # runs if guessed correctly or out of turns
     if @guessed
       puts 'you guessed right!!'
       @breaker.add_score
       @result = []
     else
       puts 'you ran out of guesses :('
-      @results = []
+      @result = []
     end
+  end
+
+  def compute(my_g)
+    count = 0
+    no_of_blacks = @result.count('black') #1
+    no_of_whites = @result.count('white')
+
+    # save into one index into a new value and change the rest
+
   end
 
   def check_guess(my_g)
@@ -169,6 +213,7 @@ class Game
     end
     puts "result: #{@result.join(', ')}"
   end
+  # end of class
 end
 
 puts 'Welcome to terminal Mastermind'
@@ -201,4 +246,11 @@ elsif type_of_game == 2
   comp_game.play
 else
   # comp guesser vs player
+  player_info
+  player1 = Player.new($p_info[0], true)
+  comp = Player.new('Ultron_at_home', false)
+  comp_game = Game.new(player1, comp)
+  comp_game.set_slots
+  comp_game.pl_guesser = false
+  comp_game.play
 end
