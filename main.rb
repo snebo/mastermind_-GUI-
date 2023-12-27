@@ -6,7 +6,7 @@ COLORS = %w[red blue yellow black green]
 class Player
   @@player_no = 1
 
-  attr_accessor :name, :maker
+  attr_accessor :name, :maker, :pl_score
 
   def initialize(name, maker)
     @name = name
@@ -15,19 +15,24 @@ class Player
 
     @@player_no += 1
   end
+
   def player_type
     @maker ? "is the code maker" : "is the code breaker"
   end
+
+  def add_score
+    @pl_score += 1
+  end
 end
 
-#Random method to get player info
+# Random method to get player info
 def player_info
   $p_info = []
   res = ''
   print "player#{Player.class_eval '@@player_no'}, Enter your name-> "
   $p_info[0] = gets.chomp
   until res == 'y' || res == 'n'
-    print 'Do you want to be the code breaker? (y,n) > '
+    print 'Do you want to be the code maker? (y,n) > '
     res = gets.chomp.downcase
   end
   $p_info[1] = res
@@ -39,19 +44,40 @@ class Game
 
   def initialize (pl1, pl2)
     @slots = 0
-    @pl1 = pl1
-    @pl2 = pl2
+    # @pl1 = pl1
+    # @pl2 = pl2
+    if pl1.maker
+      @maker = pl1
+      @breaker = pl2
+    else
+      @maker = pl2
+      @breaker = pl1
+    end
     @m_guess = []
     @guessed = false
+    @keep_play = true
   end
 
   def set_slots
     puts '=' * 30
+    slots = 0
     until Array(3..9).include?(slots)
       print 'Enter no of slots -> '
       slots = gets.chomp.to_i
     end
     @slots = slots
+  end
+
+  def play
+    chk = ''
+    while @keep_play
+      self.play_round
+      until chk == 'y' || chk == 'n'
+        puts 'Keep playing? (y,n) -> '
+        chk = gets.chomp.downcase
+      end
+      chk == 'y' ? @keep_play = fasle : nil
+    end
   end
 
   def make_guess(count)
@@ -66,17 +92,20 @@ class Game
   def play_round
     @m_guess = [] # resets master guess at the start of each round
 
-    if @pl1.maker 
+    if @maker.maker 
       puts "Choose from these colors: #{COLORS.join(', ').upcase}"
-      @slots.times { |i| self.make_guess( i + 1) }
+      @slots.times { |i| self.make_guess(i + 1) }
       # puts "Makers guess: #{@m_guess.inspect}"
       self.guess
     end
   end
 
   def guess
-    puts 'Enter the colors in order, one by one'
-    until @guessed 
+    guesses = 1
+    until @guessed || guesses > 6
+      system(clear) || system(cls)
+      puts "Codes broken by #{breaker.name}: #{breaker.pl_score}"
+      puts '=' * 30
       my_guess = []
       # making sure a valid color is guessed
       @slots.times do
@@ -89,8 +118,15 @@ class Game
       end
       # check the guess
       check_guess(my_guess)
+      guesses += 1
     end
-    puts 'you guessed right!!'
+
+    if @guessed
+      puts 'you guessed right!!'
+      @breaker.add_score
+    else
+      puts 'you ran out of guesses :('
+    end
   end
 
   def check_guess(my_g)
@@ -131,3 +167,4 @@ player2 = Player.new($p_info[0], !player1.maker)
 
 master_game = Game.new(player1, player2)
 master_game.set_slots
+master_game.play
