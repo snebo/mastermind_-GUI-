@@ -50,6 +50,7 @@ class Game
     @slots = 0
     @vs_computer = false
     @pl_guesser = true
+    @computer_guess
     # @pl1 = pl1
     # @pl2 = pl2
     if pl1.maker
@@ -98,8 +99,9 @@ class Game
 
   def play_round
     @m_guess = [] # resets master guess at the start of each round
+    @possible_guesses = COLORS.repeated_permutation(@slots).to_a
     @guessed = false
-    if @maker.maker && !@vs_computer 
+    if @maker.maker && @vs_computer == false
       puts "Choose from these colors: #{COLORS.join(', ').upcase}"
       @slots.times { |i| self.make_guess(i + 1) }
       self.guess
@@ -114,7 +116,6 @@ class Game
 
   def guess
     guesses = 1
-    copy = COLORS.copy
     until @guessed || guesses > 10
       if @pl_guesser
         system('clear') || system('cls')
@@ -133,37 +134,13 @@ class Game
         end
 
       else
-        # system logic starts here
-        # system('clear') || system('cls')
-        
-        #don't over think it
-        id = 0
-        bg_color = COLORS.clone
-        fr_arr = Array.new(4,nil)
-
-        if @result.empty?
-          @slots.times = {my_guess.push(bg_color[i])}
-          id += 1
-        else
-          if @result.length < 4
-            if @result.include?('black')
-              black = @result.count('black')
-              black.times {fr_arr.push(my_guess)}
-            end
-            if @result.include?('white')
-              white = @result.count('white')
-              white.times {fr_arr.push(my_guess)}
-            end
-            # make a new array wit fr and new index
-            my_guess = (fr_arr+Array.new(4)).fill((bg_color[i+i]), (black+white))
-            id += 1
-          
-          else
-          end
-          
-        end
+        # computer guess
+        self.c_make_guess
+        my_guess = @computer_guess
       end
-      check_guess(my_guess)
+
+      # checks and increaments round
+      @result = check_guess(my_guess)
       guesses += 1
     end
 
@@ -178,17 +155,33 @@ class Game
     end
   end
 
-  def compute(my_g)
-    count = 0
-    no_of_blacks = @result.count('black') #1
-    no_of_whites = @result.count('white')
-
-    # save into one index into a new value and change the rest
-
+  def c_make_guess
+    c_guess = []
+  
+    if @result.empty?
+      @computer_guess = Array.new(@slots, 'red')
+    else
+      self.solve
+    end
   end
 
-  def check_guess(my_g)
-    @result = []
+  def solve
+    new_guess = []
+    i = 0
+    while i <= 3
+      if @computer_guess[i] == @m_guess[i]
+        new_guess.push(@computer_guess[i])
+      else
+        selection = COLORS.reject { |a| a == @computer_guess[i] }
+        new_guess.push(selection[rand(0..(selection.length - 1))])
+      end
+      i += 1
+    end
+    @computer_guess = new_guess
+  end
+
+  def check_guess(my_g =[])
+    result = []
     dummy_guess = @m_guess.clone
     puts "checking #{my_g} vs #{@m_guess}"
     # first check the guess
@@ -199,7 +192,7 @@ class Game
     # check matches
     @slots.times do |i|
       if my_g[i] == @m_guess[i]
-        @result.push('black')
+        result.push('black')
         dummy_guess[i] = nil
       end
     end
@@ -208,11 +201,13 @@ class Game
       if dummy_guess.include?(my_g[i])
         idx = dummy_guess.find_index(my_g[i])
         dummy_guess[idx] = nil
-        @result.push('white')
+        result.push('white')
       end
     end
-    puts "result: #{@result.join(', ')}"
+    puts "result: #{result.join(', ')}"
+    result
   end
+
   # end of class
 end
 
@@ -230,7 +225,7 @@ if type_of_game == 1
   v = 'human vs human'
   player_info(v)
   player1 = Player.new($p_info[0], $p_info[1] == 'y')
-  player_info
+  player_info(v)
   player2 = Player.new($p_info[0], !player1.maker)
   master_game = Game.new(player1, player2)
   master_game.set_slots
