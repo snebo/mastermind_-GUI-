@@ -168,12 +168,17 @@ class Game
   def solve
     new_guess = []
     i = 0
+    chk = false
     while i <= 3
       if @computer_guess[i] == @m_guess[i]
         new_guess.push(@computer_guess[i])
       else
-        selection = COLORS.reject { |a| a == @computer_guess[i] }
-        new_guess.push(selection[rand(0..(selection.length - 1))])
+        until chk
+          value = COLORS.sample
+          value != @computer_guess[i] ? chk = true : nil
+        end
+        new_guess.push(value)
+        chk = false
       end
       i += 1
     end
